@@ -163,7 +163,7 @@ class SmtpConnection {
 
   private flush(): void {
     while (this.waiters.length > 0) {
-      const match = this.buffer.match(/^(?:\d{3}-.*\r\n)*(\d{3}) .*(?:\r\n|$)/s)
+      const match = this.buffer.match(/^(?:\d{3}-.*\r\n)*(\d{3}) [\s\S]*(?:\r\n|$)/)
       if (!match) return
       const end = match.index! + match[0].length
       const response = this.buffer.slice(0, end)
