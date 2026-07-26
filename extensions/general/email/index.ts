@@ -4,6 +4,7 @@ import { registerEmailService } from '@/lib/email/service'
 import { createServiceClientNoCookies } from '@/lib/auth/api-keys'
 import { createLogger } from '@/lib/logger'
 import { ResendEmailService } from './lib/resend-service'
+import { SmtpEmailService } from './lib/smtp-service'
 import {
   ResendDeliverySignatureError,
   isDeliveryWebhookConfigured,
@@ -11,14 +12,18 @@ import {
   verifyDeliveryWebhook,
 } from './lib/delivery-webhook'
 
-// Register the Resend implementation immediately when this extension is loaded
-registerEmailService(new ResendEmailService())
+// Self-hosted installations can select SMTP without requiring a Resend account.
+registerEmailService(
+  process.env.EMAIL_PROVIDER?.toLowerCase() === 'smtp'
+    ? new SmtpEmailService()
+    : new ResendEmailService(),
+)
 
 const log = createLogger('email-delivery-webhook')
 
 export const emailExtension: Extension = {
   id: 'email',
-  name: 'E-post (Resend)',
+  name: 'E-post',
   version: '1.0.0',
 
   apiRoutes: [
