@@ -10,6 +10,7 @@ import { errorResponseFromCode } from '@/lib/errors/get-structured-error'
 import type { ParsedBankTransaction, BankFileFormatId } from '@/lib/import/bank-file/types'
 import type { Transaction } from '@/types'
 import { getErrorMessage as getUserErrorMessage } from '@/lib/errors/get-error-message'
+import { buildBankFileIngestOptions } from '@/lib/import/bank-file/ingest-options'
 
 ensureInitialized()
 
@@ -102,9 +103,11 @@ export const POST = withRouteContext(
         import_source: format === 'camt053' ? 'camt053' : `csv_${format}`,
       }))
 
-      const ingestOptions: IngestOptions = {}
-      if (settlement_account) ingestOptions.settlementAccount = settlement_account
-      if (role === 'viewer') ingestOptions.rawInsertOnly = true
+      const ingestOptions: IngestOptions = buildBankFileIngestOptions({
+        autoCategorize: _auto_categorize,
+        settlementAccount: settlement_account,
+        rawInsertOnly: role === 'viewer',
+      })
       const ingestResult = await ingestTransactions(supabase, companyId, user.id, rawTransactions, ingestOptions)
 
       if (ingestResult.errors > 0 && ingestResult.first_error) {
