@@ -43,6 +43,10 @@ ENV NEXT_PUBLIC_REQUIRE_MFA=__NEXT_PUBLIC_REQUIRE_MFA__
 ENV NEXT_PUBLIC_BRANDING_APP_NAME=__NEXT_PUBLIC_BRANDING_APP_NAME__
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# The production Next.js type-check can exceed Node's default ~2 GiB heap,
+# especially during cross-architecture builds. This applies only to the
+# builder stage; the runtime image defines its own environment below.
+ENV NODE_OPTIONS=--max-old-space-size=4096
 
 RUN npm run build
 
