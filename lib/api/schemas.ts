@@ -162,6 +162,7 @@ export const CustomerTypeSchema = z.enum([
 ])
 
 export const SupplierTypeSchema = z.enum([
+  'individual',
   'swedish_business',
   'eu_business',
   'non_eu_business',

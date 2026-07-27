@@ -53,6 +53,7 @@ export default function SupplierDetailPage() {
   const { dialogProps: confirmDialogProps, confirm: confirmAction } = useDestructiveConfirm()
 
   const supplierTypeLabels = useMemo<Record<SupplierType, string>>(() => ({
+    individual: t('type_individual'),
     swedish_business: t('type_swedish'),
     eu_business: t('type_eu'),
     non_eu_business: t('type_non_eu'),

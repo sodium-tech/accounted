@@ -154,12 +154,11 @@ describe('Enum schemas', () => {
     }
   })
 
-  it('SupplierTypeSchema accepts 3 types', () => {
-    for (const val of ['swedish_business', 'eu_business', 'non_eu_business']) {
+  it('SupplierTypeSchema accepts all 4 types', () => {
+    for (const val of ['individual', 'swedish_business', 'eu_business', 'non_eu_business']) {
       expect(SupplierTypeSchema.safeParse(val).success).toBe(true)
     }
-    // individual is not a valid supplier type
-    expect(SupplierTypeSchema.safeParse('individual').success).toBe(false)
+    expect(SupplierTypeSchema.safeParse('government').success).toBe(false)
   })
 
   it('VatTreatmentSchema accepts all 6 treatments', () => {
@@ -713,7 +712,7 @@ describe('CreateSupplierSchema', () => {
   })
 
   it('rejects invalid supplier_type', () => {
-    const result = CreateSupplierSchema.safeParse(validSupplier({ supplier_type: 'individual' }))
+    const result = CreateSupplierSchema.safeParse(validSupplier({ supplier_type: 'government' }))
     expect(result.success).toBe(false)
   })
 
@@ -2113,7 +2112,7 @@ describe('UpdateSupplierSchema', () => {
   })
 
   it('rejects invalid supplier_type', () => {
-    const result = UpdateSupplierSchema.safeParse({ supplier_type: 'individual' })
+    const result = UpdateSupplierSchema.safeParse({ supplier_type: 'government' })
     expect(result.success).toBe(false)
   })
 })
