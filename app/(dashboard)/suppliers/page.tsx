@@ -34,6 +34,7 @@ const SupplierForm = dynamic(
 )
 
 const SUPPLIER_TYPE_KEYS: Record<SupplierType, string> = {
+  individual: 'type_individual',
   swedish_business: 'type_swedish_business',
   eu_business: 'type_eu_business',
   non_eu_business: 'type_non_eu_business',

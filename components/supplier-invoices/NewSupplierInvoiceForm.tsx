@@ -2293,6 +2293,7 @@ export default function NewSupplierInvoiceForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="individual">{t('supplier_type_individual')}</SelectItem>
                   <SelectItem value="swedish_business">{t('supplier_type_swedish')}</SelectItem>
                   <SelectItem value="eu_business">{t('supplier_type_eu')}</SelectItem>
                   <SelectItem value="non_eu_business">{t('supplier_type_non_eu')}</SelectItem>

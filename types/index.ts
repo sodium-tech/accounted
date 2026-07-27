@@ -116,7 +116,7 @@ export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'partially_paid' | 'over
 export type InvoiceDocumentType = 'invoice' | 'proforma' | 'delivery_note'
 
 // Supplier types
-export type SupplierType = 'swedish_business' | 'eu_business' | 'non_eu_business'
+export type SupplierType = 'individual' | 'swedish_business' | 'eu_business' | 'non_eu_business'
 
 // Supplier invoice status
 // 'reversed' marks a credit note whose journal entry was storno-reversed via

@@ -30,7 +30,7 @@ export default function SupplierForm({
 
   const schema = useMemo(() => z.object({
     name: z.string().min(1, t('name_required')),
-    supplier_type: z.enum(['swedish_business', 'eu_business', 'non_eu_business']),
+    supplier_type: z.enum(['individual', 'swedish_business', 'eu_business', 'non_eu_business']),
     email: z.string().email(t('email_invalid')).optional().or(z.literal('')),
     phone: z.string().optional(),
     address_line1: z.string().optional(),
@@ -102,6 +102,7 @@ export default function SupplierForm({
                 <SelectValue placeholder={t('type_label')} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="individual">{t('type_individual')}</SelectItem>
                 <SelectItem value="swedish_business">{t('type_swedish_business')}</SelectItem>
                 <SelectItem value="eu_business">{t('type_eu_business')}</SelectItem>
                 <SelectItem value="non_eu_business">{t('type_non_eu_business')}</SelectItem>
