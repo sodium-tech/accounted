@@ -60,7 +60,9 @@ export async function validateIxbrlWithArelle(
         filename: 'arsredovisning.xhtml',
         content_base64: Buffer.from(xhtml, 'utf8').toString('base64'),
       }),
-      signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
+      signal: AbortSignal.timeout(
+        options.timeoutMs ?? Number(process.env.BOLAGSVERKET_ARELLE_TIMEOUT_MS || 210_000),
+      ),
     })
     if (!response.ok) {
       return {

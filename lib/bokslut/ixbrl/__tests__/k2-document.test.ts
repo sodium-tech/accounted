@@ -64,6 +64,22 @@ describe('generateK2IxbrlDocument', () => {
     expect(xhtml).toMatch(/ID_DATUM_UNDERTECKNANDE_FASTSTALLELSEINTYG">2026-02-25</)
   })
 
+  it('uses the taxonomy enumeration for an approved profit disposition', () => {
+    expect(xhtml).toContain(
+      'Årsstämman beslöt att godkänna styrelsens förslag till vinstdisposition.',
+    )
+    expect(xhtml).not.toContain('förslag till resultatdisposition')
+  })
+
+  it('uses the taxonomy enumeration for an approved accumulated loss', () => {
+    const lossInput = makeInput()
+    lossInput.forvaltningsberattelse.resultatdisposition.summa = -120_000
+    const { xhtml: lossXhtml } = generateK2IxbrlDocument(lossInput)
+    expect(lossXhtml).toContain(
+      'Årsstämman beslöt att godkänna styrelsens förslag till behandling av ansamlad förlust.',
+    )
+  })
+
   it('tags RR and BR amounts with correct attributes and presentational minus', () => {
     // Nettoomsättning current year, whole kronor.
     expect(xhtml).toMatch(

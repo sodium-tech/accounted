@@ -39,6 +39,7 @@ import { populateTemplatesFromSieVouchers } from '@/lib/bookkeeping/counterparty
 import { markEntriesNoDocRequired } from '@/lib/bookkeeping/no-doc-required'
 import { parseDateParts } from '@/lib/bookkeeping/validate-period-duration'
 import { findUntransferredResults } from '@/lib/reports/imbalance-diagnosis'
+import { getOpeningBalances } from '@/lib/reports/opening-balances'
 import { formatCurrency } from '@/lib/utils'
 
 /**
@@ -725,6 +726,57 @@ export async function companyHasPriorActivity(
     .eq('status', 'posted')
 
   return (count ?? 0) > 0
+}
+
+/**
+ * Compare the SIE file's effective opening balances with the opening balances
+ * Accounted derives from the already-imported ledger.
+ *
+ * A continuation import may omit a redundant explicit IB entry only when the
+ * two sets agree account by account. A totals-only comparison is insufficient:
+ * equal and opposite omissions would still leave individual accounts wrong.
+ */
+export async function reconcileContinuationOpeningBalances(
+  supabase: SupabaseClient,
+  companyId: string,
+  periodStart: string,
+  parsed: ParsedSIEFile,
+  accountMap: Map<string, string>
+): Promise<{
+  matches: boolean
+  differences: Array<{ account: string; sourceAmount: number; derivedAmount: number; difference: number }>
+}> {
+  const sourceByAccount = new Map<string, number>()
+  for (const balance of getEffectiveOpeningBalances(parsed).balances) {
+    const targetAccount = accountMap.get(balance.account)
+    if (!targetAccount || !isBalanceSheetAccount(targetAccount)) continue
+    sourceByAccount.set(targetAccount, (sourceByAccount.get(targetAccount) ?? 0) + balance.amount)
+  }
+
+  const { balances: derived } = await getOpeningBalances(supabase, companyId, {
+    period_start: periodStart,
+    opening_balance_entry_id: null,
+  })
+
+  const accounts = new Set([...sourceByAccount.keys(), ...derived.keys()])
+  const differences = [...accounts]
+    .sort()
+    .map((account) => {
+      const sourceAmount = Math.round((sourceByAccount.get(account) ?? 0) * 100) / 100
+      const derivedBalance = derived.get(account)
+      const derivedAmount = Math.round(
+        ((derivedBalance?.debit ?? 0) - (derivedBalance?.credit ?? 0)) * 100
+      ) / 100
+      return {
+        account,
+        sourceAmount,
+        derivedAmount,
+        difference: Math.round((sourceAmount - derivedAmount) * 100) / 100,
+      }
+    })
+    .filter(({ difference }) => Math.abs(difference) > 0.01)
+
+  return { matches: differences.length === 0, differences }
 }
 
 /**
@@ -2097,25 +2149,41 @@ export async function executeSIEImport(
       if (period?.opening_balances_set || period?.opening_balance_entry_id) {
         result.warnings.push('Ingående balanser finns redan för denna period: hoppar över IB-import')
       } else {
-        // Continuation-import guard: if the company already has any posted
-        // non-IB journal entries from a prior import or manual bookkeeping,
-        // do NOT create a new IB entry. Each year's #IB equals the prior
-        // year's UB, which is already the sum of the prior year's posted
-        // transactions, so importing another IB entry double-counts one
-        // year of activity against every balance-sheet account. The
-        // first-ever import creates the legitimate pre-system IB; subsequent
-        // imports must rely on the prior entries to derive opening balances
-        // on the fly (via getOpeningBalances() fallback).
+        // Continuation imports may omit a redundant explicit IB entry, but
+        // only after proving that the source #IB agrees account by account
+        // with the balances derived from the already-imported ledger. This
+        // catches result carry-forwards (commonly account 2099) that exist in
+        // the new year's #IB but cannot be inferred from the previous file's
+        // balance-sheet rows alone.
         const isContinuationImport = await companyHasPriorActivity(supabase, companyId)
+        const continuity = isContinuationImport
+          ? await reconcileContinuationOpeningBalances(
+              supabase,
+              companyId,
+              parsed.stats.fiscalYearStart ?? formatDate(new Date()),
+              parsed,
+              accountMap
+            )
+          : null
 
-        if (isContinuationImport) {
+        if (continuity?.matches) {
           result.warnings.push(
-            'Ingående balanser hoppades över eftersom bolaget redan har bokförda verifikationer. ' +
-            'Ingående balans för denna period härleds från föregående periods utgående balans. ' +
-            'Stäm av mot SIE-filens #IB om du är osäker.'
+            'SIE-filens ingående balanser stämmer konto för konto mot föregående periods ' +
+            'utgående balans. En redundant IB-verifikation skapades därför inte.'
           )
         } else {
-        const ibValidation = validateIBBalance(parsed, accountMap)
+          if (continuity && !continuity.matches) {
+            const differenceSummary = continuity.differences
+              .map(({ account, sourceAmount, derivedAmount }) =>
+                `${account}: SIE ${sourceAmount.toFixed(2)}, härledd ${derivedAmount.toFixed(2)}`
+              )
+              .join('; ')
+            result.warnings.push(
+              'SIE-filens ingående balanser avviker från Accounteds härledda balanser. ' +
+              `Källfilens IB bevaras som explicit ingående balans. Avvikelser: ${differenceSummary}`
+            )
+          }
+          const ibValidation = validateIBBalance(parsed, accountMap)
 
         if (ibValidation.lines.length > 0) {
           if (effectiveIB.derivedFromPriorYearUB) {
