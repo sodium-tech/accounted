@@ -7,7 +7,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: erp-mafia/gnubok
+  # Keep the upstream package name, while allowing maintained forks to publish
+  # to their own repository-scoped package using GITHUB_TOKEN.
+  IMAGE_NAME: ${{ github.repository_owner == 'erp-mafia' && 'erp-mafia/gnubok' || github.repository }}
 
 jobs:
   build-and-push:
