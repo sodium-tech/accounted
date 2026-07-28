@@ -4,6 +4,7 @@ import { errorResponse, errorResponseFromCode } from '@/lib/errors/get-structure
 import { buildIxbrlInput } from '@/lib/bokslut/ixbrl/build-input'
 import { generateK2IxbrlDocument } from '@/lib/bokslut/ixbrl/document/k2-document'
 import { runPreflightChecks, type PreflightIssue } from '@/lib/bokslut/ixbrl/validate/rules'
+import { validateIxbrlWithArelle } from '@/lib/bokslut/ixbrl/validate/arelle-client'
 import { getErrorMessage as getUserErrorMessage } from '@/lib/errors/get-error-message'
 import { getVersionIxbrlInput } from '@/lib/bokslut/arsredovisning/version-ixbrl'
 
@@ -42,6 +43,8 @@ export const GET = withRouteContext(
       // block, with the reason in the issue list rather than a raw error.
       const issues: PreflightIssue[] = [...result.issues]
       let generatedBytes = 0
+      let arelleStatus: 'passed' | 'warnings' | 'failed' | 'unavailable' | 'not_run' = 'not_run'
+      let arelleValidatorVersion: string | null = null
       try {
         const { xhtml } = generateK2IxbrlDocument(input)
         generatedBytes = Buffer.byteLength(xhtml, 'utf8')
@@ -52,6 +55,16 @@ export const GET = withRouteContext(
             message: 'Dokumentet överstiger Bolagsverkets maxstorlek 5 MB.',
           })
         }
+        const arelle = await validateIxbrlWithArelle(xhtml)
+        arelleStatus = arelle.status
+        arelleValidatorVersion = arelle.validator_version
+        issues.push(
+          ...arelle.issues.map((issue) => ({
+            code: issue.code,
+            severity: issue.severity === 'error' ? 'error' as const : 'warn' as const,
+            message: issue.message,
+          })),
+        )
       } catch (genErr) {
         issues.push({
           code: 'ACC-GEN',
@@ -71,6 +84,8 @@ export const GET = withRouteContext(
           entry_point: input.entryPointId,
           period: input.period,
           annual_report_version_id: versionId,
+          arelle_status: arelleStatus,
+          arelle_validator_version: arelleValidatorVersion,
         },
       })
     } catch (err) {

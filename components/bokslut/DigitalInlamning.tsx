@@ -63,6 +63,8 @@ interface ValidateResponse {
   warning_count: number
   generated_bytes: number
   entry_point: string
+  arelle_status?: 'passed' | 'warnings' | 'failed' | 'unavailable' | 'not_run'
+  arelle_validator_version?: string | null
 }
 
 interface KontrolleraUtfall {
@@ -464,6 +466,19 @@ export function DigitalInlamning({ periodId }: { periodId: string }) {
                 )}
                 {validation.warning_count > 0 && (
                   <Badge variant="warning">{validation.warning_count} varningar</Badge>
+                )}
+                {validation.arelle_status === 'passed' && (
+                  <Badge variant="success">
+                    Arelle {validation.arelle_validator_version ?? 'godkänd'}
+                  </Badge>
+                )}
+                {validation.arelle_status === 'warnings' && (
+                  <Badge variant="warning">Arelle: varningar</Badge>
+                )}
+                {(validation.arelle_status === 'failed' || validation.arelle_status === 'unavailable') && (
+                  <Badge variant="destructive">
+                    Arelle: {validation.arelle_status === 'failed' ? 'underkänd' : 'inte tillgänglig'}
+                  </Badge>
                 )}
               </div>
               {validation.issues.length > 0 && (
