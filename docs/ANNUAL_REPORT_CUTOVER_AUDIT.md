@@ -30,6 +30,8 @@ Accounted contains the core annual-report, iXBRL, validation, signature-evidence
 - [ ] A complete acceptance rehearsal proves upload, signer handoff, event/poll status and archived receipt without filing production data.
 - [ ] The filed FY2024 annual report and receipt are archived independently of Årsredovisning Online.
 - [ ] FY2025's prepared Årsredovisning Online report (ID 223585) is compared with Accounted before any signing or submission.
+- [ ] The outstanding FY2025 year-result voucher (2099/8999, 164,820.07 SEK) is reconciled and booked exactly once.
+- [ ] Goatlab's INK2 is submitted to Skatteverket by 2026-08-03 and the receipt is archived independently of Årsredovisning Online.
 - [ ] Backup and restore evidence covers the report XHTML, signature evidence, submission receipt and registration events.
 
 ## FY2025 opening-balance defect
@@ -71,6 +73,33 @@ The complete entry must include the source credit on account 2099 of 578,717.63 
 
 This repair requires explicit action-time approval before it is applied to Goatlab's live ledger.
 
+## Årsredovisning Online source-of-truth review
+
+A read-only review of the authenticated Goatlab AB workspace was completed on
+2026-07-28. No form was submitted and no source record was changed.
+
+The service exposes nine annual-report stages that Accounted must cover or
+deliberately replace: company details, income statement, balance sheet, tax,
+profit/loss disposition, notes, management report, officers, and filing. Its
+post-completion handoff also includes the corporate income-tax declaration,
+year-end bookkeeping vouchers, AGM minutes, downloadable originals, and filing
+status/receipt history.
+
+Evidence for FY2025 report ID `223585`:
+
+- Period: 2025-01-01 through 2025-12-31; all 9/9 preparation stages are marked complete.
+- Bolagsverket filing: digital, registered on 2026-07-04 at 11:49.
+- Signing mode: electronic signatures; the service offers a signed and sealed original for independent archival.
+- INK2: not submitted; displayed statutory deadline is 2026-08-03.
+- AGM minutes: a generated PDF is available; the UI correctly states that it is not submitted to Bolagsverket.
+- Remaining year-end voucher dated 2025-12-31: debit 2099 and credit 8999 for 164,820.07 SEK.
+- The remaining voucher can be exported as SIE 4I or PDF. It must be reconciled against Fortnox and Accounted before booking so it is neither omitted nor duplicated.
+
+The registered FY2025 original, filing evidence, AGM minutes, declaration
+artifacts, and year-end voucher exports still need to be downloaded and stored
+in the migration vault. Downloading is non-destructive, but no filing or
+bookkeeping action is implied by this review.
+
 ## Deployment gaps observed on 2026-07-28
 
 The STOLAB deployment did not contain the required Bolagsverket environment selection, mTLS certificate/key, server and public filing feature flags, or Arelle validator URL. Network probes from both the development machine and the production pod timed out against `api-accept2.bolagsverket.se`.
@@ -93,7 +122,7 @@ The generator previously used the free wording “förslag till resultatdisposit
 
 ## External actions requiring a person
 
-- A user must sign in to Årsredovisning Online so FY2024 filed artifacts and FY2025 report ID 223585 can be exported and compared.
+- A user must explicitly approve downloading the signed originals, filing evidence, AGM minutes, declaration artifacts and year-end voucher exports from Årsredovisning Online into the migration vault.
 - A company representative must approve any live opening-balance correction.
 - Board/CEO signatures and the fastställelseintyg signer remain human legal acts.
 - Production upload/submission to Bolagsverket requires explicit action-time confirmation.
