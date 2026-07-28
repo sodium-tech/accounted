@@ -14,7 +14,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/accounted-arelle-validator
+  # Nest the package under this repository so GITHUB_TOKEN receives package
+  # write permission automatically, including the first workflow_dispatch.
+  IMAGE_NAME: ${{ github.repository }}/arelle-validator
 
 jobs:
   test-build-publish:
