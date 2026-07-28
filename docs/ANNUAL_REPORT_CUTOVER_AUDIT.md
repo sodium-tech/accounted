@@ -26,13 +26,15 @@ Accounted contains the core annual-report, iXBRL, validation, signature-evidence
 - [ ] The exact Goatlab FY2025 iXBRL passes Accounted preflight, Arelle and Bolagsverket `kontrollera` in the acceptance environment.
 - [ ] Bolagsverket agreement, current terms acceptance, client certificate/key and outgoing-IP allowlist are active.
 - [ ] STOLAB can reach the Bolagsverket acceptance endpoint using mTLS.
-- [ ] The deployed instance has the filing feature flags and Arelle validator URL configured.
+- [x] The deployed instance has the authenticated Arelle validator URL configured and its live validation path is proven.
+- [ ] The deployed instance has the Bolagsverket environment, certificate and filing release flags configured.
 - [ ] A complete acceptance rehearsal proves upload, signer handoff, event/poll status and archived receipt without filing production data.
 - [ ] The filed FY2024 annual report and receipt are archived independently of Årsredovisning Online.
 - [ ] FY2025's prepared Årsredovisning Online report (ID 223585) is compared with Accounted before any signing or submission.
 - [ ] The outstanding FY2025 year-result voucher (2099/8999, 164,820.07 SEK) is reconciled and booked exactly once.
 - [ ] Goatlab's INK2 is submitted to Skatteverket by 2026-08-03 and the receipt is archived independently of Årsredovisning Online.
 - [ ] Backup and restore evidence covers the report XHTML, signature evidence, submission receipt and registration events.
+- [x] The deployed full-history archive UI includes supporting documents by default and produces a live pre-download estimate.
 
 ## FY2025 opening-balance defect
 
@@ -95,14 +97,39 @@ Evidence for FY2025 report ID `223585`:
 - Remaining year-end voucher dated 2025-12-31: debit 2099 and credit 8999 for 164,820.07 SEK.
 - The remaining voucher can be exported as SIE 4I or PDF. It must be reconciled against Fortnox and Accounted before booking so it is neither omitted nor duplicated.
 
+The overview also exposes the FY2024 report (`185175`) and its annual-report
+original, declaration form, `info.sru`, `blanketter.sru`, field list, tax
+calculation, receipt, AGM protocol and bookkeeping instructions. Its INK2
+status is displayed as “laddas upp” with an age of 361 days. That is not proof
+of submission: a Skatteverket receipt or authoritative submitted-status check
+must be preserved before Årsredovisning Online is retired.
+
 The registered FY2025 original, filing evidence, AGM minutes, declaration
 artifacts, and year-end voucher exports still need to be downloaded and stored
 in the migration vault. Downloading is non-destructive, but no filing or
 bookkeeping action is implied by this review.
 
-## Deployment gaps observed on 2026-07-28
+## Deployment evidence and remaining gaps on 2026-07-28
 
-The STOLAB deployment did not contain the required Bolagsverket environment selection, mTLS certificate/key, server and public filing feature flags, or Arelle validator URL. Network probes from both the development machine and the production pod timed out against `api-accept2.bolagsverket.se`.
+The authenticated Arelle service and its Accounted integration are deployed.
+The live annual-report page visibly runs the service and fails closed when
+validation cannot pass. An isolated restore job also restored 172 tables from
+the off-cluster PostgreSQL backup and proved the annual-report filing schema
+and archive-evidence tables. Those tables were empty because no real Accounted
+filing has occurred; the restore proof must be repeated after the acceptance
+rehearsal so it covers real report, signature, submission, receipt and event
+records.
+
+The statutory full-history archive is now reachable under **Import / Export →
+Export → Create backup**. A read-only production check reported **51.7 MB** and
+**345 attachments**, with receipts and supporting documents enabled by
+default. The download action was not invoked. This proves discoverability and
+preflight estimation, not ZIP creation or independent restore of its contents.
+
+The STOLAB deployment still does not contain the required Bolagsverket
+environment selection, mTLS certificate/key, or filing release flags. Network
+probes from both the development machine and the production pod timed out
+against `api-accept2.bolagsverket.se`.
 
 Connected filing must remain disabled until these are provisioned and a fresh acceptance test succeeds. Unit tests or a generated XHTML file do not substitute for that proof.
 
