@@ -860,6 +860,11 @@ export const MASTER_DATA_DUMP_TABLES: MasterDataTableSpec[] = [
   { name: 'annual_report_validation_runs', file: 'annual_report_validation_runs.json', orderBy: 'created_at' },
   { name: 'arsredovisning_signature_requests', file: 'arsredovisning_signature_requests.json', orderBy: 'created_at' },
   { name: 'arsredovisning_submissions', file: 'arsredovisning_submissions.json' },
+  // Legal evidence that the company representative accepted the exact
+  // Bolagsverket agreement revision used for a filing. Unlike the webhook
+  // subscription row below, this contains no operational secret and belongs
+  // with the portable filing audit trail.
+  { name: 'bolagsverket_avtal_acceptances', file: 'bolagsverket_avtal_acceptances.json', orderBy: 'created_at' },
   // Settings
   { name: 'company_settings', file: 'company_settings.json' },
 ]
@@ -890,7 +895,6 @@ export const ARCHIVE_EXCLUDED_TABLES: Record<string, string> = {
   agent_profiles: 'AI assistant state, not räkenskapsinformation',
   api_keys: 'secrets',
   bank_connections: 'PSD2 connection state and tokens, not portable',
-  bolagsverket_avtal_acceptances: 'service agreement acceptance state',
   bolagsverket_subscriptions: 'integration subscription state',
   booking_template_usage: 'usage telemetry',
   calendar_feeds: 'feed tokens (secrets)',
