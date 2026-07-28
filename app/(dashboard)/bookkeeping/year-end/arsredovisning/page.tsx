@@ -24,7 +24,7 @@ import { ArrowLeft, FileDown, Plus, ExternalLink, Loader2, Save, CheckCircle2, T
 import { useToast } from '@/components/ui/use-toast'
 import { formatCurrency } from '@/lib/utils'
 import { FyPicker } from '@/components/common/FyPicker'
-import { DigitalInlamning, INLAMNING_COMING_SOON } from '@/components/bokslut/DigitalInlamning'
+import { DigitalInlamning } from '@/components/bokslut/DigitalInlamning'
 import { AnnualReportStudio } from '@/components/bokslut/AnnualReportStudio'
 import type { ArsredovisningData } from '@/lib/bokslut/arsredovisning/types'
 import type { SignatureRequest } from '@/lib/bokslut/arsredovisning/signature-service'
@@ -1013,37 +1013,17 @@ export default function ArsredovisningPage() {
                 <FileDown className="mr-2 h-4 w-4" /> Ladda ner PDF (utkast)
               </Link>
             </Button>
-            {/* Bolagsverket-delarna blurras tills integrationen är godkänd:
-                rubriken, instruktionstexten och PDF-knappen förblir skarpa. */}
-            <span
-              inert={INLAMNING_COMING_SOON}
-              aria-hidden={INLAMNING_COMING_SOON}
-              className={
-                INLAMNING_COMING_SOON
-                  ? 'pointer-events-none select-none blur-[3px] opacity-60'
-                  : undefined
-              }
-            >
-              <Button variant="outline" asChild>
-                <Link
-                  href="https://bolagsverket.se/foretag/aktiebolag/arsredovisningforaktiebolag.759.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" /> Bolagsverket om årsredovisning
-                </Link>
-              </Button>
-            </span>
+            <Button variant="outline" asChild>
+              <Link
+                href="https://bolagsverket.se/foretag/aktiebolag/arsredovisningforaktiebolag.759.html"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="mr-2 h-4 w-4" /> Bolagsverket om årsredovisning
+              </Link>
+            </Button>
           </div>
-          <div
-            inert={INLAMNING_COMING_SOON}
-            aria-hidden={INLAMNING_COMING_SOON}
-            className={
-              INLAMNING_COMING_SOON
-                ? 'pointer-events-none select-none blur-[3px] opacity-60 space-y-4'
-                : 'space-y-4'
-            }
-          >
+          <div className="space-y-4">
           {data.warnings.length > 0 && (
             <div className="space-y-1 border-t border-border/60 pt-3 text-xs">
               <p className="font-medium">Innan inlämning till Bolagsverket:</p>
