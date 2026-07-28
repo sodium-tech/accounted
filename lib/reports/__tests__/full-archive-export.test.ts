@@ -6,6 +6,7 @@ import {
   generateBaseDataArchive,
   estimateArchiveSize,
   MASTER_DATA_DUMP_TABLES,
+  ARCHIVE_EXCLUDED_TABLES,
 } from '../full-archive-export'
 import { createQueuedMockSupabase } from '@/tests/helpers'
 import { getAuditLog } from '@/lib/core/audit/audit-service'
@@ -67,6 +68,21 @@ vi.mock('../vat-declaration', () => ({
     },
   }),
 }))
+
+describe('annual-report filing archive contract', () => {
+  it('exports agreement acceptance evidence without exporting webhook secrets', () => {
+    expect(MASTER_DATA_DUMP_TABLES).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'bolagsverket_avtal_acceptances',
+          file: 'bolagsverket_avtal_acceptances.json',
+        }),
+      ]),
+    )
+    expect(ARCHIVE_EXCLUDED_TABLES).not.toHaveProperty('bolagsverket_avtal_acceptances')
+    expect(ARCHIVE_EXCLUDED_TABLES).toHaveProperty('bolagsverket_subscriptions')
+  })
+})
 
 vi.mock('@/lib/core/audit/audit-service', () => ({
   getAuditLog: vi.fn().mockResolvedValue({ data: [], count: 0 }),
