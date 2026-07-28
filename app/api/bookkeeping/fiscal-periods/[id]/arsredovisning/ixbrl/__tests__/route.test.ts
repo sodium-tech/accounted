@@ -9,11 +9,15 @@ vi.mock('@/lib/company/context', () => ({
 vi.mock('@/lib/bokslut/ixbrl/build-input', () => ({
   buildIxbrlInput: vi.fn(),
 }))
+vi.mock('@/lib/bokslut/ixbrl/validate/arelle-client', () => ({
+  validateIxbrlWithArelle: vi.fn(),
+}))
 
 import { createClient } from '@/lib/supabase/server'
 import { createQueuedMockSupabase } from '@/tests/helpers'
 import { buildIxbrlInput } from '@/lib/bokslut/ixbrl/build-input'
 import { makeInput } from '@/lib/bokslut/ixbrl/__tests__/fixtures'
+import { validateIxbrlWithArelle } from '@/lib/bokslut/ixbrl/validate/arelle-client'
 import { GET } from '../route'
 import { GET as GET_VALIDATE } from '../validate/route'
 
@@ -101,6 +105,11 @@ describe('GET /api/bookkeeping/fiscal-periods/[id]/arsredovisning/ixbrl', () => 
 describe('GET /api/bookkeeping/fiscal-periods/[id]/arsredovisning/ixbrl/validate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(validateIxbrlWithArelle).mockResolvedValue({
+      status: 'passed',
+      validator_version: '2.42.1',
+      issues: [],
+    })
   })
 
   it('returns ok with no errors for the happy-path fixture', async () => {
@@ -117,6 +126,9 @@ describe('GET /api/bookkeeping/fiscal-periods/[id]/arsredovisning/ixbrl/validate
     expect(body.data.error_count).toBe(0)
     expect(body.data.generated_bytes).toBeGreaterThan(10_000)
     expect(body.data.entry_point).toBe('k2-ab-risbs-2024-09-12')
+    expect(body.data.arelle_status).toBe('passed')
+    expect(body.data.arelle_validator_version).toBe('2.42.1')
+    expect(validateIxbrlWithArelle).toHaveBeenCalledWith(expect.stringContaining('<html'))
   })
 
   it('reports rule violations as issues without failing the request', async () => {
@@ -150,6 +162,29 @@ describe('GET /api/bookkeeping/fiscal-periods/[id]/arsredovisning/ixbrl/validate
     const issueCodes = body.data.issues.map((issue: { code: string }) => issue.code)
     expect(issueCodes).toContain('ACC-GEN')
     expect(body.data.ok).toBe(false)
+    expect(body.data.arelle_status).toBe('not_run')
+    expect(validateIxbrlWithArelle).not.toHaveBeenCalled()
+  })
+
+  it('merges blocking Arelle taxonomy issues into the visible validation result', async () => {
+    authedSupabase()
+    vi.mocked(buildIxbrlInput).mockResolvedValue(makeInput())
+    vi.mocked(validateIxbrlWithArelle).mockResolvedValue({
+      status: 'failed',
+      validator_version: '2.42.1',
+      issues: [{ code: 'xbrl.4.7.2', severity: 'error', message: 'Invalid fact.' }],
+    })
+
+    const res = await GET_VALIDATE(mkReq('/validate'), mkParams())
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.data.ok).toBe(false)
+    expect(body.data.arelle_status).toBe('failed')
+    expect(body.data.issues).toContainEqual({
+      code: 'xbrl.4.7.2',
+      severity: 'error',
+      message: 'Invalid fact.',
+    })
   })
 
   it('returns 404 when the period is missing', async () => {
