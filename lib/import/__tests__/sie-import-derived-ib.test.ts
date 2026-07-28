@@ -63,7 +63,14 @@ function buildRoutingSupabase(tableQueues: Record<string, QueuedResult[]>) {
         count: next.count ?? null,
       })
     },
-    rpc: async () => ({ data: null, error: null }),
+    rpc: async (name: string) => {
+      const next = queues.get(`rpc:${name}`)?.shift() ?? {}
+      return {
+        data: next.data ?? null,
+        error: next.error ?? null,
+        count: next.count ?? null,
+      }
+    },
     storage: {
       from: () => ({ upload: async () => ({ error: null }) }),
     },
@@ -131,7 +138,7 @@ function makeMapping(source: string, target: string): AccountMapping {
   }
 }
 
-function standardQueues() {
+function standardQueues(): Record<string, QueuedResult[]> {
   return {
     sie_imports: [
       { data: null }, // checkDuplicateImport: no duplicate
@@ -235,9 +242,15 @@ describe('executeSIEImport: derived IB from #UB -1 (issue #675)', () => {
     expect(input.description).toBe('Ingående balanser från SIE-import')
   })
 
-  it('respects the continuation guard: no derived IB when the company has prior activity', async () => {
+  it('omits a redundant IB only when it matches the derived ledger account by account', async () => {
     const queues = standardQueues()
     queues.journal_entries = [{ count: 5 }] // posted entries exist
+    queues['rpc:compute_prior_opening_balances'] = [{
+      data: [
+        { account_number: '1930', debit: 37400.78, credit: 0 },
+        { account_number: '2010', debit: 0, credit: 37400.78 },
+      ],
+    }]
     const supabase = buildRoutingSupabase(queues)
 
     const result = await executeSIEImport(
@@ -251,11 +264,56 @@ describe('executeSIEImport: derived IB from #UB -1 (issue #675)', () => {
 
     expect(createJournalEntry).not.toHaveBeenCalled()
     expect(result.openingBalanceEntryId).toBeNull()
-    expect(result.warnings.join(' ')).toMatch(/hoppades över eftersom bolaget redan har bokförda verifikationer/)
+    expect(result.warnings.join(' ')).toMatch(/stämmer konto för konto/)
     // Zero entries created → the finalizer safety net downgrades the run so
     // the file slot stays free for a retry (existing behavior).
     expect(result.success).toBe(false)
     expect(result.errors.join(' ')).toMatch(/0 verifikationer/)
+  })
+
+  it('preserves explicit source IB when a continuation includes a result carry-forward missing from the derived ledger', async () => {
+    const queues = standardQueues()
+    queues.journal_entries = [{ count: 5 }]
+    queues['rpc:compute_prior_opening_balances'] = [{
+      data: [
+        { account_number: '1930', debit: 37400.78, credit: 0 },
+        { account_number: '2010', debit: 0, credit: 37400.78 },
+      ],
+    }]
+    const supabase = buildRoutingSupabase(queues)
+    const parsed = makeParsedFile({
+      accounts: [
+        { number: '1930', name: 'Företagskonto' },
+        { number: '2010', name: 'Eget kapital' },
+        { number: '2099', name: 'Årets resultat' },
+      ],
+      openingBalances: [
+        { yearIndex: 0, account: '1930', amount: 37400.78 },
+        { yearIndex: 0, account: '2010', amount: -37300.78 },
+        { yearIndex: 0, account: '2099', amount: -100 },
+      ],
+    })
+    const mappings = [...standardMappings, makeMapping('2099', '2099')]
+
+    const result = await executeSIEImport(
+      supabase,
+      'company-1',
+      'user-1',
+      parsed,
+      mappings,
+      standardOptions,
+    )
+
+    expect(result.success).toBe(true)
+    expect(result.openingBalanceEntryId).toBe('ob-entry-1')
+    expect(result.warnings.join(' ')).toContain('2099: SIE -100.00, härledd 0.00')
+    const input = vi.mocked(createJournalEntry).mock.calls[0][3]
+    expect(input.lines).toContainEqual({
+      account_number: '2099',
+      debit_amount: 0,
+      credit_amount: 100,
+      line_description: 'IB 2099',
+    })
   })
 
   it('creates no IB entry when the file has neither #IB 0 nor #UB -1', async () => {

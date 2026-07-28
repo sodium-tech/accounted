@@ -180,7 +180,9 @@ export function generateK2IxbrlDocument(input: IxbrlArsredovisningInput): Genera
         ? writer.textPlain(
             'ArsstammaResultatDispositionGodkannaStyrelsensForslag',
             'balans0',
-            'Årsstämman beslöt att godkänna styrelsens förslag till resultatdisposition.',
+            input.forvaltningsberattelse.resultatdisposition.summa < 0
+              ? 'Årsstämman beslöt att godkänna styrelsens förslag till behandling av ansamlad förlust.'
+              : 'Årsstämman beslöt att godkänna styrelsens förslag till vinstdisposition.',
           )
         : fb.resultatdispositionOutcome === 'alternative_decision'
           ? writer.textPlain(

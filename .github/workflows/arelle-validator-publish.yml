@@ -1,0 +1,90 @@
+name: Build and Push Arelle Validator
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'services/arelle-validator/**'
+      - '.github/workflows/arelle-validator-publish.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'services/arelle-validator/**'
+      - '.github/workflows/arelle-validator-publish.yml'
+
+env:
+  REGISTRY: ghcr.io
+  # Nest the package under this repository so GITHUB_TOKEN receives package
+  # write permission automatically, including the first workflow_dispatch.
+  IMAGE_NAME: ${{ github.repository }}/arelle-validator
+
+jobs:
+  test-build-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: services/arelle-validator/requirements.txt
+
+      - name: Install pinned validator dependencies
+        working-directory: services/arelle-validator
+        run: pip install --requirement requirements.txt
+
+      - name: Test request boundary and normalization
+        working-directory: services/arelle-validator
+        env:
+          VALIDATOR_TOKEN: test-token
+        run: python -m unittest -v test_server.py
+
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix=
+
+      - name: Build and optionally publish multi-architecture image
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: services/arelle-validator
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=arelle-validator
+          cache-to: type=gha,scope=arelle-validator,mode=max
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign published image
+        if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
