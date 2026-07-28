@@ -44,11 +44,10 @@ import { getErrorMessage as getUserErrorMessage } from '@/lib/errors/get-error-m
 import { CONNECTED_FILING_PUBLIC_RELEASED } from '@/lib/bokslut/arsredovisning/capabilities'
 import type { AnnualReportVersionSummary } from '@/lib/bokslut/arsredovisning/compliance-types'
 
-/** Inlämningen till Bolagsverket väntar på avtal + organisationscertifikat
- *  (M0). Tills dess visas hela digital inlämning-sektionen blurrad med en
- *  "Kommer snart"-skylt: endast PDF-nedladdningen på ÅR-sidan är användbar.
- *  Flippa till false när integrationen är godkänd. Importeras också av
- *  ÅR-sidan som blurrar sina Bolagsverket-delar med samma flagga. */
+/** Connected submission waits for the Bolagsverket agreement, organisation
+ *  certificate and acceptance test. Preview, download and validation remain
+ *  available while this gate is closed so the filing package can be rehearsed
+ *  safely without permitting an upload. */
 export const INLAMNING_COMING_SOON = !CONNECTED_FILING_PUBLIC_RELEASED
 
 interface PreflightIssue {
@@ -416,16 +415,7 @@ export function DigitalInlamning({ periodId }: { periodId: string }) {
   const utfallHasErrors = (utfall ?? []).some((item) => item.typ?.toLowerCase() === 'error')
 
   return (
-    <div className="relative">
-      <div
-        inert={INLAMNING_COMING_SOON}
-        aria-hidden={INLAMNING_COMING_SOON}
-        className={
-          INLAMNING_COMING_SOON
-            ? 'pointer-events-none select-none blur-[3px] opacity-60 space-y-8'
-            : 'space-y-8'
-        }
-      >
+    <div className="space-y-8">
       {/* Steg: Granska & validera */}
       <section>
         <div className="mb-1 flex items-center gap-2 px-1">
@@ -496,6 +486,16 @@ export function DigitalInlamning({ periodId }: { periodId: string }) {
         </div>
       </section>
 
+      <div className="relative">
+        <div
+          inert={INLAMNING_COMING_SOON}
+          aria-hidden={INLAMNING_COMING_SOON}
+          className={
+            INLAMNING_COMING_SOON
+              ? 'pointer-events-none select-none blur-[3px] opacity-60 space-y-8'
+              : 'space-y-8'
+          }
+        >
       {/* Steg: Skicka in */}
       <section>
         <div className="mb-1 flex items-center gap-2 px-1">
@@ -883,18 +883,20 @@ export function DigitalInlamning({ periodId }: { periodId: string }) {
           </div>
         </section>
       )}
-      </div>
-      {INLAMNING_COMING_SOON && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <div className="rounded-lg border border-border bg-background px-8 py-6 text-center">
-            <p className="font-display text-2xl">Kommer snart</p>
-            <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-              Digital inlämning till Bolagsverket öppnar så snart integrationen
-              är godkänd. Tills dess: ladda ner PDF-utkastet ovan.
-            </p>
-          </div>
         </div>
-      )}
+        {INLAMNING_COMING_SOON && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center">
+            <div className="rounded-lg border border-border bg-background px-8 py-6 text-center">
+              <p className="font-display text-2xl">Kommer snart</p>
+              <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+                Digital inlämning till Bolagsverket öppnar så snart integrationen
+                är godkänd. Du kan redan förhandsgranska, ladda ner och validera
+                iXBRL-underlaget ovan.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
