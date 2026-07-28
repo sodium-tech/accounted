@@ -29,7 +29,7 @@ interface EstimateResponse {
 
 const LAST_DOWNLOAD_STORAGE_KEY = 'Accounted:last-backup-download'
 
-export function BackupDownloadForm() {
+export function BackupDownloadForm({ showCloudBackup = true }: { showCloudBackup?: boolean }) {
   const t = useTranslations('settings_backup_download')
   const { toast } = useToast()
   const { company } = useCompany()
@@ -288,23 +288,25 @@ export function BackupDownloadForm() {
         </CardContent>
       </Card>
 
-      {hasCloudBackup && CloudBackupPanel ? (
-        <CloudBackupPanel />
-      ) : (
-        <Card className="border-dashed">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Cloud className="h-4 w-4 text-muted-foreground" />
-              {t('cloud_sync_title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground max-w-prose">
-              {t('cloud_sync_disabled_help')}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {showCloudBackup ? (
+        hasCloudBackup && CloudBackupPanel ? (
+          <CloudBackupPanel />
+        ) : (
+          <Card className="border-dashed">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Cloud className="h-4 w-4 text-muted-foreground" />
+                {t('cloud_sync_title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground max-w-prose">
+                {t('cloud_sync_disabled_help')}
+              </p>
+            </CardContent>
+          </Card>
+        )
+      ) : null}
     </div>
   )
 }
