@@ -7,9 +7,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # Keep the upstream package name, while allowing maintained forks to publish
-  # to their own repository-scoped package using GITHUB_TOKEN.
-  IMAGE_NAME: ${{ github.repository_owner == 'erp-mafia' && 'erp-mafia/gnubok' || github.repository }}
+  # Keep the upstream package name. Maintained forks publish below their
+  # repository-owned namespace so GITHUB_TOKEN can create and update the
+  # package without depending on permissions of a legacy organisation package.
+  IMAGE_NAME: ${{ github.repository_owner == 'erp-mafia' && 'erp-mafia/gnubok' || format('{0}/app', github.repository) }}
 
 jobs:
   build-and-push:

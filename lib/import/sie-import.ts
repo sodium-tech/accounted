@@ -41,6 +41,7 @@ import { parseDateParts } from '@/lib/bookkeeping/validate-period-duration'
 import { findUntransferredResults } from '@/lib/reports/imbalance-diagnosis'
 import { getOpeningBalances } from '@/lib/reports/opening-balances'
 import { formatCurrency } from '@/lib/utils'
+import { roundOre } from '@/lib/money'
 
 /**
  * Format a date to ISO date string (YYYY-MM-DD)
@@ -762,16 +763,16 @@ export async function reconcileContinuationOpeningBalances(
   const differences = [...accounts]
     .sort()
     .map((account) => {
-      const sourceAmount = Math.round((sourceByAccount.get(account) ?? 0) * 100) / 100
+      const sourceAmount = roundOre(sourceByAccount.get(account) ?? 0)
       const derivedBalance = derived.get(account)
-      const derivedAmount = Math.round(
-        ((derivedBalance?.debit ?? 0) - (derivedBalance?.credit ?? 0)) * 100
-      ) / 100
+      const derivedAmount = roundOre(
+        (derivedBalance?.debit ?? 0) - (derivedBalance?.credit ?? 0)
+      )
       return {
         account,
         sourceAmount,
         derivedAmount,
-        difference: Math.round((sourceAmount - derivedAmount) * 100) / 100,
+        difference: roundOre(sourceAmount - derivedAmount),
       }
     })
     .filter(({ difference }) => Math.abs(difference) > 0.01)
