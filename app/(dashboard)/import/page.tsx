@@ -101,6 +101,10 @@ const SIEPreviewStep = dynamic(() => import('@/components/import/SIEPreviewStep'
 const AccountMappingStep = dynamic(() => import('@/components/import/AccountMappingStep'), { loading: ImportStepLoading })
 const ImportReviewStep = dynamic(() => import('@/components/import/ImportReviewStep'), { loading: ImportStepLoading })
 const ImportResultStep = dynamic(() => import('@/components/import/ImportResultStep'), { loading: ImportStepLoading })
+const BackupDownloadForm = dynamic(
+  () => import('@/components/settings/BackupDownloadForm').then((mod) => mod.BackupDownloadForm),
+  { loading: ImportStepLoading }
+)
 
 // ============================================================
 // Bank File Import Wizard Steps
@@ -1961,11 +1965,13 @@ export default function ImportPage() {
   const [mode, setMode] = useState<ImportMode>(null)
   const [view, setView] = useState<'import' | 'export'>('import')
   const [sieDialogOpen, setSieDialogOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const [cloudOpen, setCloudOpen] = useState(false)
   const [userId, setUserId] = useState('')
   const [exportPeriodId, setExportPeriodId] = useState<string | null>(null)
   const [exportExcludeClosing, setExportExcludeClosing] = useState(true)
   const t = useTranslations('import')
+  const backupT = useTranslations('settings_backup_download')
   const router = useRouter()
   const hasCloudBackup = ENABLED_EXTENSION_IDS.has('cloud-backup')
   const hasBankSync = useCapability(CAPABILITY.bank_sync)
@@ -2001,14 +2007,20 @@ export default function ImportPage() {
     }
   }, [isSandbox, searchParams])
 
-  // Hash-based deep links: both live on the export tab; #sie-export opens
-  // the SIE dialog, #cloud-backup expands the cloud panel and scrolls to it.
+  // Hash-based deep links live on the export tab. SIE opens a dialog; archive
+  // and cloud backup expand their respective panels and scroll to them.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const hash = window.location.hash
     if (hash === '#sie-export') {
       setView('export')
       setSieDialogOpen(true)
+    } else if (hash === '#full-archive') {
+      setView('export')
+      setArchiveOpen(true)
+      setTimeout(() => {
+        document.querySelector(hash)?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+      }, 80)
     } else if (hash === '#cloud-backup') {
       setView('export')
       setCloudOpen(true)
@@ -2147,6 +2159,12 @@ export default function ImportPage() {
                   sub={t('export_sie_description')}
                   onClick={() => setSieDialogOpen(true)}
                 />
+                <ImportRow
+                  title={backupT('create_backup_title')}
+                  sub={backupT('scope_all_desc')}
+                  expanded={archiveOpen}
+                  onClick={() => setArchiveOpen((open) => !open)}
+                />
                 {hasCloudBackup && (
                   <ImportRow
                     title={t('cloud_row_title')}
@@ -2156,6 +2174,11 @@ export default function ImportPage() {
                   />
                 )}
               </div>
+              {archiveOpen && (
+                <div id="full-archive" className="mt-6 scroll-mt-24">
+                  <BackupDownloadForm showCloudBackup={false} />
+                </div>
+              )}
               {hasCloudBackup && cloudOpen && (
                 <div id="cloud-backup" className="mt-6 scroll-mt-24">
                   <CloudBackupCard />
@@ -2280,7 +2303,7 @@ function ImportRow({
   /** Logo chips under the sub line (provider marks, as on the live page). */
   chips?: React.ReactNode
   disabled?: boolean
-  /** For rows that fold a panel open below the grid (cloud backup). */
+  /** For rows that fold a backup panel open below the grid. */
   expanded?: boolean
   onClick: () => void
   id?: string
