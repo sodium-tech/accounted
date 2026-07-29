@@ -621,6 +621,13 @@ export function mapTrialBalancesToK2(
     for (const row of rows) {
       const balance = Math.round(row.closing_debit - row.closing_credit)
       if (balance === 0) continue
+      // 8999 is the mechanical year-result clearing account. The income
+      // statement is deliberately built from the pre-closing TB, while the
+      // full TB contains the offset on 8999 after 2099 has been booked. It
+      // must therefore be excluded from both RR mapping and the unmapped
+      // sweep; mapping it would zero the reported result, and warning about
+      // it incorrectly blocks an otherwise valid post-closing report.
+      if (row.account_number === '8999') continue
       const reclass = RECLASSIFIED_ACCOUNTS[row.account_number]
       if (reclass && !seenReclass.has(row.account_number)) {
         seenReclass.add(row.account_number)

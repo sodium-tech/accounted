@@ -268,6 +268,15 @@ describe('mapTrialBalancesToK2', () => {
     expect(res.warnings.some((w) => w.includes('9999'))).toBe(true)
   })
 
+  it('does not flag the 8999 year-result clearing balance as unmapped', () => {
+    const full = [...CURRENT.full, row('8999', 'Årets resultat', 0, 120_000)]
+    const res = mapTrialBalancesToK2({ full, preClosing: CURRENT.preClosing }, null)
+
+    expect(res.unmappedAccounts.some((account) => account.account === '8999')).toBe(false)
+    expect(res.warnings.some((warning) => warning.includes('8999'))).toBe(false)
+    expect(res.totals.aretsResultat.current).toBe(120_000)
+  })
+
   it('warns when the mapped balance sheet does not balance (3005)', () => {
     const brokenFull = CURRENT.full.map((r2) =>
       r2.account_number === '1930' ? { ...r2, closing_debit: 275_000 } : r2,
