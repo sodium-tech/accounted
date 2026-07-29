@@ -14,15 +14,16 @@ export async function getVersionIxbrlInput(
   const input = structuredClone(version.ixbrl_data)
   const { data, error } = await supabase
     .from('arsredovisning_signature_requests')
-    .select('signer_name, role, signed_at')
+    .select('signer_name, role, status, signed_at')
     .eq('company_id', companyId)
     .eq('fiscal_period_id', fiscalPeriodId)
     .eq('annual_report_version_id', versionId)
     .order('created_at', { ascending: true })
   if (error) throw new Error(`Failed to load version signatures: ${error.message}`)
-  if ((data ?? []).length === 0) return input
+  const activeSignatures = (data ?? []).filter((signature) => signature.status !== 'declined')
+  if (activeSignatures.length === 0) return input
 
-  input.underskrifter.signers = (data ?? []).map((signature) => {
+  input.underskrifter.signers = activeSignatures.map((signature) => {
     const parts = signature.signer_name.trim().split(/\s+/)
     return {
       firstName: parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0],
@@ -40,5 +41,10 @@ export async function getVersionIxbrlInput(
       .filter((date): date is string => date !== null)
       .sort()
       .at(-1) ?? null
+  if (activeSignatures.every((signature) => signature.status === 'signed' && signature.signed_at)) {
+    input.warnings = input.warnings.filter(
+      (warning) => warning !== 'Alla underskriftsförfrågningar är inte signerade ännu.',
+    )
+  }
   return input
 }
