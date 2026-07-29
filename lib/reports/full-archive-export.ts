@@ -857,6 +857,7 @@ export const MASTER_DATA_DUMP_TABLES: MasterDataTableSpec[] = [
   { name: 'arsredovisning_narratives', file: 'arsredovisning_narratives.json' },
   { name: 'annual_report_profiles', file: 'annual_report_profiles.json', orderBy: 'created_at' },
   { name: 'annual_report_versions', file: 'annual_report_versions.json', orderBy: 'created_at' },
+  { name: 'annual_report_agm_records', file: 'annual_report_agm_records.json', orderBy: 'created_at' },
   { name: 'annual_report_validation_runs', file: 'annual_report_validation_runs.json', orderBy: 'created_at' },
   { name: 'arsredovisning_signature_requests', file: 'arsredovisning_signature_requests.json', orderBy: 'created_at' },
   { name: 'arsredovisning_submissions', file: 'arsredovisning_submissions.json' },
