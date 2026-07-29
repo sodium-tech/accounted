@@ -182,7 +182,7 @@ It returns \`CONFLICT\` (\`already_closed\`) if the period is already closed, \`
 
 ## 8. Assemble the årsredovisning (aktiebolag only)
 
-For an AB, the annual report (årsredovisning) is filed with Bolagsverket within 7 months of the fiscal-year end. A single \`/reports/annual-report\` endpoint is **not yet exposed in v1**: assemble the K2/K3 source figures from the report endpoints that do exist, then typeset and submit via Bolagsverket Mina Sidor.
+For an AB, the annual report (årsredovisning) is filed with Bolagsverket within 7 months of the fiscal-year end. The dashboard's annual-report studio builds K2/K3 statements from the locked ledger, freezes content-addressed versions, records external signature evidence, generates PDF and K2 iXBRL, and creates a complete AGM/archive ZIP with SHA-256 checksums. Package generation never submits to Bolagsverket; review and external filing remain explicit steps.
 
 \`\`\`bash
 # Resultaträkning

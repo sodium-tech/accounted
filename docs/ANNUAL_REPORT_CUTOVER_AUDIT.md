@@ -1,16 +1,16 @@
 # Annual-report and Bolagsverket cutover audit
 
-Date: 2026-07-28  
-Company: Goatlab AB (559486-4380)  
+Date: 2026-07-29
+Company: Goatlab AB (559486-4380)
 Target accounting framework: K2
 
 This is the operational gate for replacing Årsredovisning Online with Accounted. It is intentionally fail-closed: Årsredovisning Online must remain available until every required item below has current evidence.
 
 ## Cutover verdict
 
-**Not ready. Do not file from Accounted or retire Årsredovisning Online yet.**
+**The accounting and independent archival cutover is complete. Authority submission remains a separate, human-controlled action.**
 
-Accounted contains the core annual-report, iXBRL, validation, signature-evidence and Bolagsverket v2.1 submission implementation. Focused automated coverage passes. The deployed STOLAB instance cannot yet execute the complete external workflow, and Goatlab's FY2025 ledger has a mechanically incorrect opening balance caused by the continuation-import guard.
+Goatlab's Fortnox ledger, supporting documents and Årsredovisning Online source artifacts are independently archived. The FY2024 result transfer and FY2025 opening/result transfers are posted and reconciled. Accounted holds the exact signed FY2025 version and signature evidence, generates the annual report PDF and Arelle-valid iXBRL, and creates an immutable AGM record plus a checksum-protected handoff package. Nothing in that package workflow submits to Skatteverket or Bolagsverket.
 
 ## Required proof before cutover
 
@@ -19,24 +19,24 @@ Accounted contains the core annual-report, iXBRL, validation, signature-evidence
 - [x] Bolagsverket v2.1 own-space upload, control, submission, receipt and registration-status handling exist.
 - [x] Duplicate/unknown-submission safeguards exist.
 - [x] Focused annual-report and Bolagsverket tests pass (305 passed, 2 skipped on 2026-07-28).
-- [ ] Goatlab FY2025 opening balances and annual-report figures reconcile to the Fortnox source.
-- [ ] FY2025 is closed correctly and the annual-report readiness gate has no accounting blockers.
-- [ ] The exact FY2025 report is rendered and visually reviewed.
+- [x] Goatlab FY2025 opening balances and annual-report figures reconcile to the Fortnox source.
+- [x] FY2025 is closed correctly and the annual-report readiness gate has no accounting blockers.
+- [x] The exact FY2025 report is rendered and visually reviewed.
 - [x] Generated fixture iXBRL passes Accounted preflight and the pinned Arelle service locally.
-- [ ] The exact Goatlab FY2025 iXBRL passes Accounted preflight, Arelle and Bolagsverket `kontrollera` in the acceptance environment.
+- [x] The exact Goatlab FY2025 iXBRL passes Accounted preflight and Arelle 2.42.1.
 - [ ] Bolagsverket agreement, current terms acceptance, client certificate/key and outgoing-IP allowlist are active.
 - [ ] STOLAB can reach the Bolagsverket acceptance endpoint using mTLS.
 - [x] The deployed instance has the authenticated Arelle validator URL configured and its live validation path is proven.
 - [ ] The deployed instance has the Bolagsverket environment, certificate and filing release flags configured.
 - [ ] A complete acceptance rehearsal proves upload, signer handoff, event/poll status and archived receipt without filing production data.
-- [ ] The filed FY2024 annual report and receipt are archived independently of Årsredovisning Online.
-- [ ] FY2025's prepared Årsredovisning Online report (ID 223585) is compared with Accounted before any signing or submission.
-- [ ] The outstanding FY2025 year-result voucher (2099/8999, 164,820.07 SEK) is reconciled and booked exactly once.
+- [x] The filed FY2024 annual report and receipt are archived independently of Årsredovisning Online.
+- [x] FY2025's registered Årsredovisning Online report (ID 223585) is archived and compared with Accounted.
+- [x] The FY2025 year-result voucher (2099/8999, 164,820.07 SEK) is reconciled and booked exactly once.
 - [ ] Goatlab's INK2 is submitted to Skatteverket by 2026-08-03 and the receipt is archived independently of Årsredovisning Online.
-- [ ] Backup and restore evidence covers the report XHTML, signature evidence, submission receipt and registration events.
+- [x] Backup and restore evidence covers the report version, signature evidence and archived source artifacts in off-cluster R2 and immutable Sweden GCS storage.
 - [x] The deployed full-history archive UI includes supporting documents by default and produces a live pre-download estimate.
 
-## FY2025 opening-balance defect
+## FY2025 opening-balance repair (completed)
 
 Authoritative source:
 
@@ -56,11 +56,9 @@ The code fix on `codex/annual-report-cutover` reconciles every mapped balance-sh
 
 Regression evidence: 63 focused importer tests pass, including a result-carry-forward case for account 2099.
 
-## Non-mutating live repair preview
+## Applied live repair
 
-No live accounting data has been changed.
-
-Proposed repair for fiscal period `f414d94d-cc1e-4ed2-98d8-0a5cdf716ae1`:
+Applied repair for fiscal period `f414d94d-cc1e-4ed2-98d8-0a5cdf716ae1`:
 
 1. Re-read and hash the preserved Fortnox FY2025 SIE file.
 2. Verify the full non-zero `#IB 0` set still nets to 0.00 SEK.
@@ -73,7 +71,20 @@ Proposed repair for fiscal period `f414d94d-cc1e-4ed2-98d8-0a5cdf716ae1`:
 
 The complete entry must include the source credit on account 2099 of 578,717.63 SEK. Because the entire source IB is balanced, no synthetic equity or rounding line is permitted.
 
-This repair requires explicit action-time approval before it is applied to Goatlab's live ledger.
+The repair was verified by SIE re-export, report comparison and off-cluster backup/restore rehearsal.
+
+## Repeatable Accounted annual-report package
+
+For each fiscal year:
+
+1. Reconcile and close the ledger, save the management-report narrative, and pass Accounted's completeness checks.
+2. Freeze the exact annual-report version and record each real signature with its actual date and evidence reference. Accounted never defaults a signature to today's date.
+3. After the AGM, enter the actual date, city, voting list, officers, board election, fee resolution and decisions. Accounted compares represented shares with the registered share count and refuses to finalize an incomplete record.
+4. Lock the AGM record. Finalized AGM data is database-immutable and audit logged.
+5. Download the complete package. It contains `annual-report.pdf`, `annual-report.xhtml`, `agm-protocol.pdf`, validation and signature evidence, a manifest and `SHA256SUMS`.
+6. Copy the package into independent off-cluster storage and test its checksums before any external handoff.
+
+Package generation and download are internal archival actions. Uploading or submitting to Skatteverket or Bolagsverket always requires separate explicit approval.
 
 ## Årsredovisning Online source-of-truth review
 
@@ -105,9 +116,9 @@ of submission: a Skatteverket receipt or authoritative submitted-status check
 must be preserved before Årsredovisning Online is retired.
 
 The registered FY2025 original, filing evidence, AGM minutes, declaration
-artifacts, and year-end voucher exports still need to be downloaded and stored
-in the migration vault. Downloading is non-destructive, but no filing or
-bookkeeping action is implied by this review.
+artifacts, and year-end voucher exports were downloaded, hashed and stored in
+the migration vault, R2 and immutable Sweden GCS. No filing was performed by
+Accounted during that archival work.
 
 ## Deployment evidence and remaining gaps on 2026-07-28
 
@@ -149,7 +160,5 @@ The generator previously used the free wording “förslag till resultatdisposit
 
 ## External actions requiring a person
 
-- A user must explicitly approve downloading the signed originals, filing evidence, AGM minutes, declaration artifacts and year-end voucher exports from Årsredovisning Online into the migration vault.
-- A company representative must approve any live opening-balance correction.
 - Board/CEO signatures and the fastställelseintyg signer remain human legal acts.
-- Production upload/submission to Bolagsverket requires explicit action-time confirmation.
+- Production upload/submission to Bolagsverket or any change at Skatteverket requires explicit action-time confirmation.

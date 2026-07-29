@@ -26,6 +26,7 @@ import { formatCurrency } from '@/lib/utils'
 import { FyPicker } from '@/components/common/FyPicker'
 import { DigitalInlamning } from '@/components/bokslut/DigitalInlamning'
 import { AnnualReportStudio } from '@/components/bokslut/AnnualReportStudio'
+import { AnnualMeetingEditor } from '@/components/bokslut/AnnualMeetingEditor'
 import type { ArsredovisningData } from '@/lib/bokslut/arsredovisning/types'
 import type { SignatureRequest } from '@/lib/bokslut/arsredovisning/signature-service'
 import type { AnnualReportVersionSummary } from '@/lib/bokslut/arsredovisning/compliance-types'
@@ -99,7 +100,7 @@ export default function ArsredovisningPage() {
     'paper_original' | 'advanced_e_signature' | 'bankid'
   >('paper_original')
   const [signatureEvidence, setSignatureEvidence] = useState('')
-  const [signatureDate, setSignatureDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [signatureDate, setSignatureDate] = useState('')
 
   const handleVersionsChanged = useCallback((nextVersions: AnnualReportVersionSummary[]) => {
     setVersions(nextVersions)
@@ -994,6 +995,15 @@ export default function ArsredovisningPage() {
           </div>
         </div>
       </section>
+
+      {periodId && (
+        <AnnualMeetingEditor
+          periodId={periodId}
+          report={data}
+          versions={versions}
+          signatures={signatures}
+        />
+      )}
 
       <section>
         <div className="mb-1 flex items-center gap-2 px-1">
