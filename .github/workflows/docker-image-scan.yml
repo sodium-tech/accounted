@@ -29,7 +29,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner == 'erp-mafia' && 'erp-mafia/gnubok' || github.repository }}
+  # Keep this expression identical to docker-publish.yml so the gate always
+  # scans the package produced by the build workflow.
+  IMAGE_NAME: ${{ github.repository_owner == 'erp-mafia' && 'erp-mafia/gnubok' || format('{0}/app', github.repository) }}
 
 jobs:
   scan:
@@ -70,10 +72,11 @@ jobs:
           output: trivy-results.sarif
 
       - name: Upload Trivy results to GitHub Security tab
-        # if: always() so findings still reach the Security tab even though the
-        # scan step above failed the run. Same category as docker-publish.yml so
-        # the two analyses share one alert set instead of duplicating.
-        if: always()
+        # Upload findings even when Trivy reports vulnerabilities, but do not
+        # create a second, misleading error if Trivy failed before writing SARIF.
+        # Same category as docker-publish.yml so the two analyses share one
+        # alert set instead of duplicating.
+        if: ${{ always() && hashFiles('trivy-results.sarif') != '' }}
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
